@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stellar-one-asset-report"
+version = "0.1.8"
+description = "Generate PDF security status reports for TXOne Stellar One assets."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+  { name = "Christian Sogaard Nielsen" }
+]
+dependencies = [
+  "requests>=2.31.0",
+  "reportlab>=4.0.0",
+  "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+stellar-report = "main:main"
+
+[tool.setuptools]
+py-modules = ["main", "stellar_api", "pdf_report", "config"]

@@ -1,0 +1,4 @@
+include INSTALL.md
+include README.md
+include requirements.txt
+include .env.example
