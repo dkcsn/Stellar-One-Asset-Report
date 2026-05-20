@@ -17,19 +17,19 @@ It supports:
 Copy this file to the target machine:
 
 ```text
-stellar_one_asset_report-0.1.8-py3-none-any.whl
+stellar_one_asset_report-0.1.9-py3-none-any.whl
 ```
 
 ### Windows
 
 ```powershell
-py -3 -m pip install --upgrade stellar_one_asset_report-0.1.8-py3-none-any.whl
+py -3 -m pip install --upgrade stellar_one_asset_report-0.1.9-py3-none-any.whl
 ```
 
 ### macOS
 
 ```bash
-python3 -m pip install --upgrade stellar_one_asset_report-0.1.8-py3-none-any.whl
+python3 -m pip install --upgrade stellar_one_asset_report-0.1.9-py3-none-any.whl
 ```
 
 ## Configure
@@ -161,13 +161,13 @@ STELLAR_VERIFY_SSL=false
 Restart the terminal after installation, or reinstall:
 
 ```bash
-python3 -m pip install --upgrade stellar_one_asset_report-0.1.8-py3-none-any.whl
+python3 -m pip install --upgrade stellar_one_asset_report-0.1.9-py3-none-any.whl
 ```
 
 On Windows:
 
 ```powershell
-py -3 -m pip install --upgrade stellar_one_asset_report-0.1.8-py3-none-any.whl
+py -3 -m pip install --upgrade stellar_one_asset_report-0.1.9-py3-none-any.whl
 ```
 
 ## Report Limitations

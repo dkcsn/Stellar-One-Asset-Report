@@ -55,13 +55,14 @@ def build_pdf_report(
     sections = [
         ("1. Report Metadata", _metadata_rows(agent, group_context)),
         ("2. Asset Identity", _asset_identity_rows(agent)),
-        ("3. Network Information", _network_rows(agent)),
-        ("4. Operating System and Agent Version", _os_agent_rows(agent)),
-        ("5. Agent Status", _agent_status_rows(agent)),
-        ("6. Protection Status", _protection_rows(agent)),
-        ("7. Scan Execution Result", _scan_rows(scan_response, scan_status)),
-        ("8. Policy Summary", _policy_rows(policy)),
-        ("9. Limitations", _limitations_rows()),
+        ("3. Hardware Inventory", _hardware_inventory_rows(agent)),
+        ("4. Network Information", _network_rows(agent)),
+        ("5. Operating System and Agent Version", _os_agent_rows(agent)),
+        ("6. Agent Status", _agent_status_rows(agent)),
+        ("7. Protection Status", _protection_rows(agent)),
+        ("8. Scan Execution Result", _scan_rows(scan_response, scan_status)),
+        ("9. Policy Summary", _policy_rows(policy)),
+        ("10. Limitations", _limitations_rows()),
     ]
 
     for title, rows in sections:
@@ -101,6 +102,7 @@ def build_group_pdf_report(
 
     story.extend(_group_summary_block(group, agents, scan_response, scan_status, styles))
     story.extend(_approval_block(stamp_image, signature_image, styles))
+    story.extend(_group_hardware_inventory_section(agents, styles))
     story.extend(_group_inventory_section(agents, policies or {}, styles))
     story.extend(_group_agent_details_sections(agents, policies or {}, styles))
     story.extend(_section("Limitations", _limitations_rows(), styles))
@@ -264,6 +266,45 @@ def _group_inventory_section(
     return [Paragraph("Agent Inventory", styles["Heading2"]), table, Spacer(1, 5 * mm)]
 
 
+def _group_hardware_inventory_section(
+    agents: list[dict[str, Any]],
+    styles: dict[str, ParagraphStyle],
+) -> list[Any]:
+    headers = ["Hostname", "SMBIOS UUID", "Baseboard Serial", "Memory", "Volumes"]
+    rows = [[Paragraph(header, styles["Key"]) for header in headers]]
+    for agent in agents:
+        identity = _nested(agent, "sysInfoExtra", "identity")
+        values = [
+            agent.get("hostname"),
+            identity.get("smbiosUuid"),
+            identity.get("baseboardSerialNumber"),
+            _memory_summary(agent),
+            _volumes_summary(agent),
+        ]
+        rows.append([Paragraph(_format_value(value), styles["Cell"]) for value in values])
+
+    table = Table(
+        rows,
+        colWidths=[35 * mm, 55 * mm, 48 * mm, 40 * mm, 96 * mm],
+        repeatRows=1,
+        hAlign="LEFT",
+    )
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F3F6F8")),
+                ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#D9E1E8")),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ]
+        )
+    )
+    return [Paragraph("Hardware Inventory", styles["Heading2"]), table, Spacer(1, 5 * mm)]
+
+
 def _group_agent_details_sections(
     agents: list[dict[str, Any]],
     policies: dict[str, dict[str, Any]],
@@ -381,6 +422,26 @@ def _asset_identity_rows(agent: dict[str, Any]) -> list[tuple[str, Any]]:
         ("SMBIOS UUID", identity.get("smbiosUuid")),
         ("Baseboard serial", identity.get("baseboardSerialNumber")),
     ]
+
+
+def _hardware_inventory_rows(agent: dict[str, Any]) -> list[tuple[str, Any]]:
+    identity = _nested(agent, "sysInfoExtra", "identity")
+    sys_info_extra = agent.get("sysInfoExtra")
+    extra_keys = []
+    if isinstance(sys_info_extra, dict):
+        extra_keys = sorted(key for key in sys_info_extra if key not in {"identity", "mem", "volumes"})
+
+    rows = [
+        ("SMBIOS UUID", identity.get("smbiosUuid")),
+        ("Baseboard serial", identity.get("baseboardSerialNumber")),
+        ("Total memory", _memory_value(agent, "totalMemory")),
+        ("Free memory", _memory_value(agent, "freeMemory")),
+        ("Volumes", _volumes_summary(agent)),
+    ]
+
+    for key in extra_keys:
+        rows.append((_humanize(key), sys_info_extra.get(key)))
+    return rows
 
 
 def _network_rows(agent: dict[str, Any]) -> list[tuple[str, Any]]:
@@ -602,6 +663,36 @@ def _components(agent: dict[str, Any]) -> str:
     return "\n".join(labels) if labels else "Not returned"
 
 
+def _memory_summary(agent: dict[str, Any]) -> str:
+    total_memory = _memory_value(agent, "totalMemory")
+    free_memory = _memory_value(agent, "freeMemory")
+    if total_memory == "Not returned" and free_memory == "Not returned":
+        return "Not returned"
+    return f"Total: {total_memory}\nFree: {free_memory}"
+
+
+def _memory_value(agent: dict[str, Any], key: str) -> str:
+    mem = _nested(agent, "sysInfoExtra", "mem")
+    return _bytes_value(mem.get(key))
+
+
+def _volumes_summary(agent: dict[str, Any]) -> str:
+    volumes = _nested_list(agent, "sysInfoExtra", "volumes")
+    if not volumes:
+        return "Not returned"
+
+    labels = []
+    for volume in volumes:
+        if not isinstance(volume, dict):
+            continue
+        drive = volume.get("drive") or "Unknown drive"
+        volume_type = volume.get("type") or f"Drive type {volume.get('driveType')}"
+        total = _bytes_value(volume.get("total"))
+        free = _bytes_value(volume.get("free"))
+        labels.append(f"{drive} ({volume_type}) total {total}, free {free}")
+    return "\n".join(labels) if labels else "Not returned"
+
+
 def _summarize_dict(value: dict[str, Any]) -> str:
     parts = []
     for key, item in value.items():
@@ -619,6 +710,33 @@ def _nested(payload: dict[str, Any], *keys: str) -> dict[str, Any]:
             return {}
         current = current.get(key)
     return current if isinstance(current, dict) else {}
+
+
+def _nested_list(payload: dict[str, Any], *keys: str) -> list[Any]:
+    current: Any = payload
+    for key in keys:
+        if not isinstance(current, dict):
+            return []
+        current = current.get(key)
+    return current if isinstance(current, list) else []
+
+
+def _bytes_value(value: Any) -> str:
+    if value in (None, ""):
+        return "Not returned"
+    try:
+        size = int(value)
+    except (TypeError, ValueError):
+        return str(value)
+
+    units = ["B", "KB", "MB", "GB", "TB"]
+    amount = float(size)
+    for unit in units:
+        if abs(amount) < 1024 or unit == units[-1]:
+            if unit == "B":
+                return f"{int(amount)} {unit}"
+            return f"{amount:.1f} {unit}"
+        amount /= 1024
 
 
 def _timestamp(value: Any) -> str:

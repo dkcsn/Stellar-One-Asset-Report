@@ -126,14 +126,14 @@ Build a wheel and source archive:
 The exportable files will be created in `dist/`, for example:
 
 ```text
-dist/stellar_one_asset_report-0.1.8-py3-none-any.whl
-dist/stellar_one_asset_report-0.1.8.tar.gz
+dist/stellar_one_asset_report-0.1.9-py3-none-any.whl
+dist/stellar_one_asset_report-0.1.9.tar.gz
 ```
 
 Install the wheel on another machine:
 
 ```bash
-python3 -m pip install stellar_one_asset_report-0.1.8-py3-none-any.whl
+python3 -m pip install stellar_one_asset_report-0.1.9-py3-none-any.whl
 ```
 
 After installation, run the CLI as:
@@ -161,13 +161,14 @@ For a compact English installation and use guide, see [INSTALL.md](INSTALL.md).
 
 1. Report metadata
 2. Asset identity
-3. Network information
-4. Operating system and agent version
-5. Agent status
-6. Protection status
-7. Scan execution result
-8. Policy summary
-9. Limitations
+3. Hardware inventory
+4. Network information
+5. Operating system and agent version
+6. Agent status
+7. Protection status
+8. Scan execution result
+9. Policy summary
+10. Limitations
 
 ## Important Limitations
 

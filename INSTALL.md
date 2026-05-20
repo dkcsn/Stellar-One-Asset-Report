@@ -37,13 +37,13 @@ Copy the `.whl` file from the `dist/` folder to the target machine.
 Install it with pip:
 
 ```bash
-python3 -m pip install stellar_one_asset_report-0.1.8-py3-none-any.whl
+python3 -m pip install stellar_one_asset_report-0.1.9-py3-none-any.whl
 ```
 
 On Windows, use:
 
 ```powershell
-py -3 -m pip install stellar_one_asset_report-0.1.8-py3-none-any.whl
+py -3 -m pip install stellar_one_asset_report-0.1.9-py3-none-any.whl
 ```
 
 ## Configuration
